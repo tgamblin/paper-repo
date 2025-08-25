@@ -1,0 +1,21 @@
+\begin{figure}
+\begin{subfigure}[t]{1.0\columnwidth}
+\input{code11.tex}
+\caption{Compiled ASP encoding of the \directive{can\_splice} directive included
+  as a comment on the first line of the fragment}
+\label{fig:can-splice-encoding}
+\end{subfigure}
+\begin{subfigure}[b]{1.0\columnwidth}
+\input{code12.tex}
+\caption{The core logic implementing splicing. This fragment selects whether to
+  execute a splice based on the presence of the \asp{can\_splice} fact, and then
+  imposes the new spliced dependency instead of the pre-installed spec's original
+  dependency.} 
+  \label{fig:splice-lp}
+\end{subfigure}
+\caption{The splicing implementation in ASP portion of Spack's concretizer.}
+\label{fig:splice-concretizer}
+\Description{An ASP snippet implementing the core of the splicing logic.}
+\end{figure}
+
+

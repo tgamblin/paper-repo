@@ -1,0 +1,24 @@
+\section{Conclusions and Future Work}
+There is a fundamental tension between source-based and binary-based package
+management trading off configurability for installation speed. This tension
+arises from a lack of explicitly modeling ABI-compatibility in source-based
+package managers, while concerns of ABI-compatibility limit configurability in
+binary-based package managers.
+
+In this paper, we provide an extension to the source-based Spack package manager
+that allows for explicitly stating and reasoning about ABI-compatibility among
+packages and automatically generating solutions with a minimal number of builds
+by reusing and relinking ABI-compatible packages when possible. Our extension
+incurs minimal overhead, while greatly extending the modeling capability of
+Spack. We have also demonstrated that our approach scales well in the presence
+of many opportunities for splicing. Our hope is that this extension will increase
+the efficiency of Spack users, and provide a testing bed for future research on
+ABI compatibility.
+
+Currently, ABI compatibility must be specified by package
+developers manually adding \asp{can\_splice} to their package classes. The
+one-time effort of modeling a package's ABI can provide massive efficiency gains
+for all downstream users of a package. In the future, we will develop methods
+for automating ABI discovery for the Spack ecosystem in order to reduce
+developer burden.
+

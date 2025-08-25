@@ -1,0 +1,219 @@
+\section{Automatic Splicing}
+\label{sec:implementation}
+In this section we describe the implementation of automatic splicing in Spack.
+The concretizer synthesizes spliced solutions from pre-installed specs when
+package developer-specified declarative constraints on splice validity are
+satisfied. As described in previous sections, this allows specs from a
+buildcache to be built using general implementations of common interfaces, like
+\package{MPICH}, and deployed without user intervention against specialized
+implementations, such as \package{CrayMPICH}.  It also enables updating
+dependencies in a way that does not require \emph{rebuilding the world}.
+
+Several changes needed to be made to Spack. A new directive was added
+to the packaging language for expressing
+ABI-compatibility (\cref{sec:impl-new-directive}). The ASP encoding of
+pre-installed specs needed to be changed to allow for splicing (\cref{sec:impl-new-encoding}).
+Finally, logic was added to the concretizer to synthesize and execute splices
+(\cref{sec:impl-splice-concretizer}). \Cref{sec:impl-basic-asp} provides an
+introduction to the ASP encoding and techniques used in Spack's
+concretizer.\footnote{Most ASP examples are simplified to the core logic
+  necessary to understand the approach in this work. Spack's full concretizer
+  has a number of indirections and augmentations to support a diverse array of
+  features that are orthogonal to splicing and binary reuse.}
+
+\subsection{ASP in the concretizer}
+\label{sec:impl-basic-asp}
+Recall from \cref{sec:spack-concretizer} that the ASP portion of Spack's
+concretizer takes four inputs: compiled ASP facts of the user's requested spec,
+compiled ASP facts from all package definition classes, an encoding of the
+concrete specs that it can reuse, and a logic program implementing
+Spack's concretization semantics. Specs are encoded through two relations:
+\asp{node} and \asp{attr}. The unary \asp{node} relation simply takes the name
+of the package that it is encoding to indicate its presence. The higher-order,
+variable arity \asp{attr} relation describes how various attributes are
+attached to nodes. The first argument of \asp{attr}
+is always the name of the attribute, the second is the node to which it applies,
+and all other arguments depend on the particular attribute. By using a
+higher-order \asp{attr} relation, rather than individual relations for each
+potential attribute, common patterns that relate to all of the potential
+attributes can be reused (such as \asp{impose} later in this section). The
+following is the encoding of \spec{example+bzip \textasciicircum{}bzip2}:
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code0.tex}\end{minipage}}\vspace{0.8em}
+Notably, the spec encoded above is not yet concrete, since not all attributes
+have been set (\eg{} the versions of the packages). The logic program
+implementing the concretizer describes how to take user provided abstract
+specs and the compiled package definitions to set \emph{all} attributes on the
+nodes. Attributes range not only over the six for concrete specs
+described in \cref{sec:spack-specs}, but also can describe various integrity
+properties of the whole spec DAG as it relates to a particular node.
+There are over twenty different attributes considered in the concretizer in all.
+
+The directives from package definitions are compiled to analogous ASP facts
+describing constraints on the solution space. The following is an example of the
+facts related to versions for the package from \cref{fig:example-pkg}, declaring
+two unconditional versions for the package \spec{1.1.0} and \spec{1.0.0}:
+%
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code1.tex}\end{minipage}}\vspace{0.8em}
+The logic program then has the related rule for selecting versions which can
+be read as ``choose exactly one version for each node from the
+declared versions.'':
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code2.tex}\end{minipage}}\vspace{0.8em}
+There are analogous corresponding package facts and concretizer rules for each
+associated attribute for concrete spec (\eg{} variant values, dependencies, \etc{}).
+
+\subsubsection{Handling conditional constraints}
+\label{sec:concretizer-imposition}
+Many package directives have a \texttt{when} argument for expressing
+conditional constraints. These require a little more machinery to express in
+ASP. Each condition is given a unique identifier, the requirements
+for the condition to be satisfied, and the constraint imposed on the resulting
+models if those conditions hold. Below is the compiled representation of the
+conditional dependency from line 11 of the package in \cref{fig:example-pkg}. It
+declares a condition with unique identifier \asp{"x153"}, with conditions that
+there is a node \asp{"example"} with variant \asp{"bzip"} set
+to \asp{"True"}. The condition then imposes the constraint that the \asp{"example"}
+node also depends on \asp{"bzip2"}.
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code3.tex}\end{minipage}}\vspace{0.8em}
+The \asp{condition\_requirement} follows a similar pattern to \asp{attr}, in
+that it is a higher-order, variable arity relation to allow for uniform handling
+of the various requirements.
+
+In order to attach attributes to nodes conditionally (\ie{} when a
+\texttt{when} spec is satisfied), the concretizer includes a set of rules for
+conditionally imposed constraints on nodes. These rules hinge on two relations,
+\asp{impose} and \asp{imposed\_constraint}. The latter is a variable-arity
+relation taking advantage of the higher order encoding of \asp{attr} indexed by
+a unique identifier, while the former controls constraints associated with that
+identifier that are imposed on a particular node. What follows is an example of how
+these facts are used in the logic program for the concretizer:
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code4.tex}\end{minipage}}\vspace{0.8em}
+Note that there are similar rules at every potential arity of the \asp{attr}
+relation. \asp{imposed\_constraint} is used to encode various package facts,
+especially for reusable specs and \asp{impose} is derived when the conditions
+associated with the \asp{ID} are present. In particular to this work, the
+\asp{ID} considered will be that of the hash of a reusable spec.
+
+\subsubsection{Reusing concrete specs}
+\label{sec:concretizer-reuse}
+In order to reuse concrete specs, the concretizer must be aware of installed specs
+indexed by their unique hash) and which constraints would
+be imposed in their reuse. This is encoded directly by providing an
+\asp{installed\_hash} relation that ties package names to the hashes of
+concrete specs and \asp{imposed\_constraint} facts for all of the attributes
+of the concrete spec. What follows is the encoding of the concrete spec from
+\cref{sec:spack-concretizer}:
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code5.tex}\end{minipage}}\vspace{0.8em}
+We will update this encoding in \cref{sec:impl-new-encoding} with some
+indirection to better facilitate splicing.
+
+In order to select reusable specs, the concretizer may select at most one spec
+for every node with a potential candidate (\ie{} the \asp{installed\_hash} fact
+is present for a node with that name). If chosen, the concretizer imposes all
+constraints associated with that concrete spec. Any node which is not selected
+for reuse is then marked to be built instead. Then, the highest optimization
+objective in Spack's concretizer is to reuse as many specs as possible, or
+equivalently to minimize the number of specs needing to be built:
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code6.tex}\end{minipage}}\vspace{0.8em}
+\subsection{Augmenting Spack's Package Language}
+\label{sec:impl-new-directive}
+\subsubsection{Representation in the packaging DSL}
+We add a single directive to Spack's packaging language for specifying
+ABI-compatibility relationships between packages, \directive{can\_splice}.  The
+bottom of \cref{fig:example-pkg} demonstrates \directive{can\_splice} directives
+for our example package. The first spec argument describes the constraints on
+the target of the splice (\ie{} the spec that would be replaced by the splice) and
+the \texttt{when} spec argument describes the constraints on the package for the
+splice to be valid. Both arguments support the full spec syntax. Note that
+splices can be specified between two versions of the same package as well as
+different packages. \directive{can\_splice} is a natural extension to the
+packaging language since it utilizes the same API as most other Spack
+directives.
+
+This directive inverts the dependency structure of Spack when
+considering binary distributions of packages. While the \directive{depends\_on}
+relationship is given by the \emph{depending} package, \directive{can\_splice} allows
+\emph{dependent} packages to state when it would not be ABI-breaking for them to
+be swapped for another package. One subtlety to note is that packages state which
+specs they \emph{can replace} rather than by which they \emph{can be replaced}.
+This is an acknowledgment of the fact that developers of a common ABI, like
+that of \package{MPICH}, will not necessarily be aware of every ABI-compatible
+replacement, but developers of these replacements will know that their package
+is ABI compatible.
+
+\subsubsection{Encoding in ASP}
+Unlike other directives in Spack, rather than being encoded as facts to describe
+the constraints imposed by the \directive{can\_splice} directive, we choose to
+encode the constraints from \directive{can\_splice} as a specialized rule.
+\Cref{fig:can-splice-encoding} demonstrates our ASP encoding for the second
+\directive{can\_splice} directive in \cref{fig:example-pkg}. It is a single rule
+that derives the fact \asp{can\_splice}. This fact represents that the package
+node in its first argument can replace a reusable spec with the name of the
+second argument and the hash of the third argument, and can only be derived if
+there is a package node satisfying the \texttt{when} spec and a pre-built spec
+satisfying the target. It is a near-direct translation of the
+\directive{can\_splice} directive to ASP. Being able to match node attributes to
+pre-built spec attributes is one of factors that motivated the change in
+encoding of reusable specs to use \asp{hash\_attr}.
+
+\subsection{Changing the Encoding of Reusable Specs}
+\label{sec:impl-new-encoding}
+Recall from \cref{sec:concretizer-reuse} that reusable specs were encoded by
+directly as \asp{imposed\_constraint} facts for every attribute of the concrete
+spec, indexed by its hash. Since splicing changes the dependencies of a concrete
+spec, the concretizer needs to be able to change which dependencies are imposed
+by the spliced spec. Yet, in the previous encoding, all constraints from the
+original spec are imposed immediately, and ASP does not have a mechanism for
+removing derived facts from a model. Therefore, we changed the encoding of
+pre-installed specs to add a layer of indirection between the encoding of the
+attributes of reusable specs, and when those attributes are actually imposed.
+%
+\input{encoding-change.tex}
+%
+\Cref{fig:new-encoding-hash-attrs} demonstrates how we introduce this
+indirection through \asp{hash\_attr} facts and
+\cref{fig:new-encoding-imposed-constraints} shows how we recover the semantics
+from the previous encoding. Note that the initial imposition of \asp{"hash"} and
+\asp{"depends\_on"} depends on the presence of
+\asp{can\_splice}. These attributes are where splices can be
+introduced and this encoding allows the concretizer to make decisions about
+imposition and reuse of either the original dependency or a spliced dependency.
+Without this \asp{can\_splice}, there are no valid splices and
+thus the concretizer defaults to its previous behavior of always reusing the
+dependencies of any pre-built spec whenever it reuses the spec itself.
+%
+\subsection{Splicing in the Concretizer}
+\label{sec:impl-splice-concretizer}
+\input{splice-lp.tex}
+%
+\Cref{fig:splice-lp} demonstrates the core fragment of the concretizer
+implementing splicing. The rules can be read top to bottom as implementing the
+fairly simple decision procedure for splicing. The rules beginning on lines 1
+and 4 describe an exclusive-or condition for how to impose the dependencies of the spec
+that is being chosen for reuse provided it has a potential candidate for a
+splice. When reusing a concrete spec, the concretizer may impose its original
+dependency (the choice on line 1). If it does not (the condition on line 8), it
+must instead splice in a compatible dependency (the conclusion on line 4). If it
+decides to splice in a new dependency (the condition on line 12), that new
+dependency is imposed instead of the original one (the conclusion on line 9).
+
+Perhaps it is surprising how little logic is required to implement the core
+splicing in the concretizer's logic program. We owe this elegance to the change
+in encoding of reusable concrete specs. The small indirection added through
+\asp{hash\_attr} facts provides the perfect hook for changing the dependency
+when splicing. By refactoring machinery already present in the concretizer (\ie{}
+\asp{impose} and \asp{imposed\_constraint}), we are still able to take advantage
+of the logic that maintains the integrity of the whole spec-DAG (\eg{} ensuring
+compatible microarchitectures among all specs). After making this encoding
+change, Spack core developers have found subsequent uses in the concretizer for
+indirection in imposing concrete specs\footnote{https://github.com/spack/spack/pull/45189}.
+
+Ultimately, the concretizer produces a mapping between pre-built specs (\ie{}
+nodes with the \asp{"hash"} attribute) and their dependencies that will be
+replaced by splicing (\ie{} nodes with the \asp{"splice"} attribute). This
+mapping can be used directly not only to build the spliced specs in a
+straightforward manner but also in the rewiring of spliced specs, as
+described in \cref{sec:splice-relocation}. Finally, the splicing logic can be
+conditionally loaded, and thus is a fully transparent opt-in feature. We
+validate that our encoding change for pre-installed specs incurs minimal
+overhead in the next section.
+

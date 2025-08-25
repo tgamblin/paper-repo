@@ -1,0 +1,110 @@
+\section{Splicing}
+\input{splice-example.tex}
+Supporting ABI compatibility presents two key package management opportunities.
+The first is to avoid the unnecessary cascade of rebuilds for transitive
+dependent packages when swapping ABI-compatible dependencies. Similarly,
+deploying a package binary built with a reference library (like \package{MPICH})
+onto systems with custom ABI-compatible implementations should not trigger rebuilds.
+
+As discussed in \cref{sec:background-pm}, updating a dependency in a source
+build can cause a series of package rebuilds for everything that directly
+and transitively depends on it even when the updated package is ABI-compatible
+with the version of the package that it is updating.  Instead, only the updated
+package needs to be rebuilt and the RPATHs of all dependents updated to the
+new binary.
+
+The deployment scenario is even simpler.
+Recall from \cref{sec:introduction} the problem of deploying a package on a
+cluster using \package{Cray MPICH} when the package binary was built against
+a general implementation {MPICH} on a build server.
+Notably, \package{Cray MPICH} is usually a binary that
+exists only on the cluster.
+Assuming the general implementation conforms to the \package{Cray MPICH} ABI,
+deployment of the package binary should only require that it point to \package{Cray MPICH}.
+
+These scenarios introduce two challenges for Spack:
+\begin{enumerate}
+\item How should Spack represent binaries built against one
+  implementation of an interface and deployed against another?
+  %This
+  %representation should make it clear how to relocate each binary and provide
+  %full build provenance for reproducibility.
+\item How should developers specify ABI-compatibility information to Spack such
+  that these solutions are automated?
+\end{enumerate}
+In this section we present \textit{splicing} as a solution to the first
+challenge and focus on its mechanics and representation. We also present a
+solution to the second challenge of automating splicing in
+\cref{sec:implementation}.  Splicing is a model of describing package
+installations built against one shared library and deployed against
+another, while maintaining full build provenance.
+
+\subsection{The Mechanics of Splicing}
+\label{sec:splice-mechanics}
+We present the mechanics of splicing through a stripped down synthetic scenario,
+as depicted in \cref{fig:splice-example}: There are two pre-compiled packages,
+\spec{T} and \spec{H'}, conforming to \spec{T \textasciicircum{}H \textasciicircum{}Z@1.0} (rectangular nodes)
+and \spec{H' \textasciicircum{}S \textasciicircum{}Z@1.1} (rounded nodes). The user is requesting a package
+installation conforming to \spec{T \textasciicircum{}H'}, and Spack knows that \spec{H} and
+\spec{Z@1.0} are ABI-compatible with \spec{H'} and \spec{Z@1.1},
+respectively. Currently, the best Spack could do to satisfy the request would be
+to recompile \spec{T} against \spec{H'}; however, our goal is to satisfy the
+user's request without recompiling.
+
+At the level of spec DAGs, the solution is as simple as replacing the \spec{T}
+dependency on \spec{H} with the full spec for \spec{H'}, which we call splicing;
+however, there are a few subtleties to acknowledge. The first is the
+handling of the shared \spec{Z} dependency. Simply copying in the full spec for
+\spec{H'} would leave two copies of the \spec{Z} dependency at different
+versions.  Since there can only be one version of any dependency in the link-run
+graph for a spec, splicing must have a way to ``break ties.'' In general, we
+consider splices to be \emph{transitive}, namely that splicing a dependent spec
+also replaces all shared dependencies between the root and the spec being
+spliced in.
+
+If the user instead requested \spec{T \textasciicircum{}H' \textasciicircum{}Z@1.0} (\ie{}
+explicitly constraining \spec{Z}), this can be solved with another
+splice. Splicing \spec{Z} back into the the initial transitively spliced spec
+(blue background in \cref{fig:splice-example}), would produce an
+\emph{intransitive} splice (red background in \cref{fig:splice-example}), where
+\spec{Z@1.1} dependency for \spec{H'} is replaced with \spec{Z@1.0}, and the
+dependency for \spec{T} is restored.
+
+The second subtlety is related to the \emph{build provenance} of spliced
+specs. Note that \spec{T \textasciicircum{}H' \textasciicircum{}Z@1.1} \emph{could} have been how the related
+binaries were built, and thus a naive implementation attempting to reproduce
+this spec would build it directly. Yet, this is not actually how the binaries
+corresponding to this spec were built. First, \spec{T \textasciicircum{}H \textasciicircum{}Z@1.0} and
+\spec{H' \textasciicircum{}Z@1.1} were built, and then they were spliced together. In order to
+maintain reproducibility, Spack needs to distinguish spliced specs
+from non-spliced specs and should be able reproduce the whole process of how a
+spliced spec was constructed by building the initial specs and then splicing
+them together, rather than just building the resulting spec. Therefore, we
+augment spliced specs with a reference to the spec from which they are derived
+that we call the \emph{build spec} (denoted by the dashed line in \cref{fig:splice-example}).
+
+The final subtlety is the handling of build dependencies (not
+pictured). Splicing is only a consideration for concrete specs which have
+already been built (\ie{} there is an existing binary to be
+relinked). On the other hand, recall that build dependencies need not be present
+\emph{after} being used to build the spec's binary.
+Therefore, build dependencies are removed from the spec whose dependency
+has been spliced, since they are no longer relevant to the runtime
+representation. By keeping around the aforementioned build spec, removing these
+build dependencies from the spliced spec does not sacrifice reproducibility.
+
+\subsection{Patching Spliced Binaries}
+\label{sec:splice-relocation}
+Recall from \cref{sec:spack-relocation} that all Spack requires for binary
+relocation is a mapping from the current installation paths of shared libraries
+to the desired relocation paths of those libraries. This machinery can easily be
+reused for patching binaries from spliced specs by generalizing
+\emph{relocation} to \emph{rewiring}. Instead of changing the paths of the same
+shared library to different locations, the shared library of the old node in the
+spec before it was spliced is patched to be the new shared library of the
+analogous node after it was spliced. This rewiring demonstrates the need for the
+build spec in a spliced spec, since it allows for Spack to determine the mapping
+between how the binary was initially installed to how it needs to be patched in
+order to conform to the spliced spec. Build specs also make it simple to
+determine whether a spec has been spliced at all, since only spliced specs will
+have an associated build spec.

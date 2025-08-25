@@ -1,0 +1,89 @@
+\section{Introduction}
+\label{sec:introduction}
+
+When developing and deploying high-performance software there is an inherent
+trade off between building from source and using pre-compiled binaries. Building
+from source provides full control over micro-architectural optimizations and
+conditional features offered in bleeding-edge scientific software. However,
+this customizability is often complex and time consuming, especially given the
+large numbers of dependencies that must be compatibly built for HPC.
+The more supported features and dependencies on third party libraries a package
+has, the greater the difficulty in configuring and building the software
+completely from source. The ability to use pre-compiled libraries can increase
+the speed and ease of installation but at the cost of locking into potentially
+limited configuration options that may not match the user's needs.
+
+Spack \cite{gamblin2015spack} eliminates that sacrifice by providing
+configurability with the relative ease of using pre-compiled libraries, either
+those previously built from source by Spack or those that already exist on the
+system. Spack-built libraries may be installed locally on the system or fetched
+from an external binary cache. For example, package updates in the Spack repository
+trigger creation of binaries that populate a public cache available to the Spack
+community\footnote{https://spack.io/spack-binary-packages/}. Software already on
+the system can include pre-compiled libraries that Spack cannot build, such as
+vendor-specific MPI implementations, or hardware abstractions.
+
+When using pre-compiled libraries that may have been built separately, it is
+important to ensure that their \emph{application binary interfaces} (ABIs)
+are compatible. ABI-compatible libraries agree on the compiled names of shared
+symbols, the calling conventions for functions, and the size and layout of
+shared types. Spack only allows {\it one} implementation of each dependency
+in any installation's {\it directed acyclic graph} (DAG) of dependencies.
+This trivially ensures ABI compatibility, because every compilation that
+uses a given dependency will include the same headers, ensuring consistency.
+An installation that built with a {\it different} version of the dependency
+cannot occur in the same DAG. If the user requires a different version (or a
+different implementation) of some dependency, all libraries built with the
+prior version must be rebuilt.
+
+On its face, this may not seem like too much of a restriction; however, it is
+overly conservative and prevents reuse in cases where a different build of a
+dependency would retain ABI-compatibility. To illustrate the consequences of
+this restriction, consider deploying the widely used solver suite
+\package{Trilinos} \cite{trilinos-website} on an HPE Cray
+cluster. \package{Trilinos} has a dependency on an MPI implementation and HPE
+Cray recommends using their specialized MPI implementation (\package{Cray MPICH})
+on their hardware \cite{cray-docs}.  Notably, \package{Cray MPICH} is only
+available on HPE Cray systems, but is ABI-compatible with the general purpose
+\package{MPICH}.  Given Spack's current restrictions,
+users would be forced to rebuild all of \package{Trilinos} on the cluster in
+order to use \package{Cray MPICH} even though it is safe to build it in advance
+against a compatible \package{MPICH} and simply link against
+\package{Cray MPICH}. This becomes especially painful when trying to {\it distribute}
+MPI binaries. Ideally, we would build a stack of software with the publicly
+available \package{MPICH} and allow it to be installed without rebuilding on
+on any system with an ABI-compatible, optimized MPI implementation. Because
+Spack currently cannot describe when two packages are ABI-compatible,
+and because it cannot represent heterogeneous binaries built with {\it different}
+dependency implementations, it cannot effectively reuse binaries that depend
+on MPI, and it must rebuild.
+
+In this paper, we present an extension to Spack called \emph{splicing}.
+We augment Spack with a model of package ABI-compatibility and a model of
+heterogeneous dependencies that may not have been initially compiled together.
+Splicing allows Spack to replace dependencies of pre-compiled libraries
+with ABI-compatible substitutes. We add a single directive,
+\directive{can\_splice}, to Spack's domain specific language (DSL), which allows
+developers to specify when compiled configurations of libraries are ABI-compatible.
+We also extend Spack's dependency resolution mechanism to synthesize
+ABI-compatible splices when using pre-compiled libraries. These features create
+an additional dependency structure on the Spack ecosystem that allows for
+specifying the ABI compatibility of a package's compiled representations and how
+those can be safely replaced as the dependency of another pre-compiled
+library.
+%
+In summary, we provide the following contributions:
+\begin{enumerate}
+\item A formal model of \textit{splicing}, a representation of binary
+  re-linking in Spack that maintains full build provenance;
+
+\item An augmentation to Spack's packaging language for specifying ABI
+  compatibility between package configurations;
+
+\item An implementation of automatic splice synthesis in Spack's
+  solver and re-linking in Spack's installer; and
+
+\item An empirical evaluation of scaling, performance, and correctness of
+  dependency resolution augmented with splicing.
+\end{enumerate}
+

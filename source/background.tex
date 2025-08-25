@@ -1,0 +1,66 @@
+\section{Background}
+\subsection{API vs. ABI Compatibility}
+There are two forms of application interface compatibility: program and binary.
+An application programming interface (API) is a source-level contract describing
+the interface that a library provides to others. It includes the signatures of
+functions and names of exported types. A package X is API-compatible with a
+package Y if X implements a superset of Y's interface. That is, any package
+which uses Y's interface may safely use X's implementation of that interface,
+even though X may provide additional functionality. For C libraries, this
+information is encapsulated in header files, and API-compatible packages
+implement equivalent headers. An
+application binary interface (ABI) describes the boundary between two
+independently compiled software artifacts. This includes the compiler-mangled
+names of exported symbols and the layout of exported types. A compiled package X
+is ABI-compatible with a compiled package Y if it is API compatible {\it and}
+its compiled representation has the same mangled names and type layouts.
+
+While API compatibility is necessary for ABI compatibility, it is not
+sufficient. For example, if a user-defined type in a particular interface is
+opaque, like MPI's \texttt{MPI\_Comm}, code that treats this type opaquely
+at the source level may be safely compiled against any API-compatible
+implementation of MPI, but once compiled it can only be safely used with code that
+implements the type in the \emph{same} way that it was compiled. The C ABI for
+language-specified types (\eg{} ints, floats, structs \etc{}) is rigorously
+specified for any particular architecture. Opaque type incompatibility at the
+binary level actually arises between \package{Open MPI}~\cite{gabriel2004open}
+and \package{MPICH}~\cite{gropp1996mpich}.
+While \package{Open MPI} implements \texttt{MPI\_Comm} as an incomplete
+struct pointer, \package{MPICH} implements it as a 32-bit integer~\cite{hammond2023mpi}.
+Binaries compiled against one implementation cannot safely use the other.
+
+\subsection{Package Managers}
+\label{sec:background-pm}
+Package managers provide tools to mitigate the complexity of installing
+software. They can solve user-imposed constraints, handle dependencies,
+build packages from source, and install precompiled binaries.
+Most package managers have either a \emph{binary} or \emph{source} based
+deployment paradigm. Binary package managers, like those included with
+most major Linux distributions (Gentoo Linux being a notable exception), select
+and download software versions as pre-compiled binary artifacts (\eg{} shared
+libraries, executables, \etc{}). Binary package managers allow for quick
+installation, but they limit package versions to specific pre-compiled
+configurations. They also require that all expressed dependency constraints be between
+ABI-compatible versions, since the packages installed by a user will be compiled
+independently.
+
+Source-based package managers download source code, build it, and deploy the
+resulting software. In addition to installing files, they must manage the
+associated build or interpretation. Generally, all dependent packages of a
+source build will be compiled consistently, i.e., only a single version of any
+dependency will be used, and flags are kept consistent across all
+builds. Package developers can thus express dependencies at the API level.  ABI
+compatibility follows by virtue of the consistent compilation model.  While the
+lack of ABI modeling allows for more expressiveness, updates to packages with
+many dependents trigger long cascades of recompilation. Updating to an ABI
+incompatible version of a package in an existing dependency tree will require
+all \emph{dependent packages} to rebuild against the new version. These rebuilds
+in the dependent packages can then require rebuilds of their own dependent
+packages, with required rebuilds potentially cascading to the whole dependency
+tree. This need to \emph{rebuild the world} can have a chillling effect on a
+developer's willingness to update a single dependency.  Furthermore, not all
+source code is open and developers may have to rely on some software that is
+only available as a binary, especially in the HPC space. This means that source
+based package managers will also build with binary packages out of necessity,
+even if the source code was never available to the package manager.
+

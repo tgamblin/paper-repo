@@ -1,0 +1,72 @@
+\begin{figure}
+  \begin{tikzpicture}
+    [> = stealth,
+    every node/.append style = {
+      inner sep = 1pt
+    },
+    tnode/.style = {
+      shape = rectangle,
+      draw = black,
+      minimum width = \minwidthoval
+    },
+    hnode/.style = {
+      shape = rounded rectangle,
+      draw = black,
+      minimum width = \minwidthoval  
+    }
+    ]
+    % Main box
+    \fill[lightgray, opacity=0.5] (-0.6,-0.5) rectangle (5.3, 2.5);
+    \node[anchor=south east]  at (5, 2) {Already built specs};
+
+    % T ^H' box
+    \fill[cyan, opacity=0.1] (-0.6, -4) rectangle (2.3, -1);
+    \node[anchor=south east] at (2.05, -1.4) {\spec{T \textasciicircum{}H'}};
+    
+
+    % T ^H' ^Z box
+    \fill[purple, opacity=0.1] (2.4, -4) rectangle (5.3, -1);
+    \node[anchor=south east] at (5, -1.4) {\spec{T\textasciicircum{}H'\textasciicircum{}Z@1.0}};
+    
+    \node[tnode] (t) at (0,2) {$T$};
+    \node[tnode] (h) at (1,1) {$H$};
+    \node[tnode] (z10) at (0,0) {$Z@1.0$};
+    \node[hnode] (h') at (4, 1) {$H'$};
+    \node[hnode] (z11) at (3, 0) {$Z@1.1$};
+    \node[hnode] (s) at (5, 0) {$S$};
+    \node[tnode] (splicet) at (0, -1.5) {$T$};
+    \node[hnode] (spliceh') at (1, -2.5) {$H'$};
+    \node[hnode] (splicez) at (0, -3.5) {$Z@1.1$};
+    \node[hnode] (splices) at (2, -3.5) {$S$};
+    \node[tnode] (insplicet) at (3, -1.5) {$T$};
+    \node[hnode] (inspliceh') at (4, -2.5) {$H'$};
+    \node[tnode] (insplicez) at (3, -3.5) {$Z@1.0$};
+    \node[hnode] (insplices) at (5, -3.5) {$S$};
+    \path[->] (t) edge (h);
+    \path[->] (t) edge (z10);
+    \path[->] (h) edge (z10);
+    \path[->] (h') edge (z11);
+    \path[->] (h') edge (s);
+    \path[->] (splicet) edge (spliceh');
+    \path[->] (splicet) edge (splicez);
+    \path[->] (spliceh') edge (splicez);
+    \path[->] (spliceh') edge (splices);
+    \path[->] (insplicet) edge (inspliceh');
+    \path[->] (insplicet) edge (insplicez);
+    \path[->] (inspliceh') edge (insplicez);
+    \path[->] (inspliceh') edge (insplices);
+    \draw[dashed, bend left = 55, ->] (splicet) to (t);
+    \draw[dashed, bend left = 25, ->] (insplicet) to (t);
+    \draw[dashed, ->] (inspliceh') to (h');
+  \end{tikzpicture}
+  \caption{An example of how splicing combines spec-DAGs while maintaining build
+    provenance. The specs in gray, \spec{T \textasciicircum{}H \textasciicircum{}Z@1.0} (rectangular nodes) and
+    \spec{H' \textasciicircum{}S \textasciicircum{}Z@1.1} (rounded nodes), are already built. A spec
+    conforming to \spec{T \textasciicircum{}H'} can be satisfied with a
+    splice of the already built \spec{H'} into already built \spec{T} (blue
+    background). A spec conforming to \spec{T \textasciicircum{}H' \textasciicircum{}Z@1.0} can be satisfied
+    by splicing \spec{Z@1.0} back into the previous spec (red background). The
+  build provenance for spliced specs are denoted with dashed lines.}
+\label{fig:splice-example}
+\Description{A graphical representation of transitive and intransitive splices.}
+\end{figure}

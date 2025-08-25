@@ -1,0 +1,22 @@
+\begin{table}
+  \begin{tabularx}{1.0\columnwidth}{|c|X|X|}
+    \hline
+    Spec Sigil & Example & Meaning \\
+    \hline
+    \spec{@} & \spec{hdf5@1.14.5} & Require version \\
+    \hline
+    \spec{+} & \spec{hdf5+cxx} & Require variant \\
+    \spec{\textasciitilde} & \spec{hdf5\textasciitilde{}mpi} & Disable variant \\
+    \hline
+    \spec{\textasciicircum} & \spec{hdf5 \textasciicircum{}zlib} & Depends on (link-run)\\
+    \spec{\%} & \spec{hdf5\%clang} & Depends on (build)\\
+    \hline
+    \spec{key=value} & \spec{hdf5 target=icelake} \newline
+                       \spec{hdf5 api=default}  & Require variant or target
+                                                  to hold value \\
+    \hline
+  \end{tabularx}
+  \caption{Examples of spec syntax, and their meaning.}
+  \Description{A table detailing the spec CLI syntax used by Spack.}
+  \label{fig:spec-syntax}
+\end{table}

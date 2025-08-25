@@ -1,0 +1,170 @@
+\section{Spack}
+\label{sec:spack}
+
+Spack is a source {\it and} binary package manager, widely used in HPC. This
+section describes Spack's \textit{packages}, \textit{specs},
+\textit{concretizer}, and \textit{binary relocation}, core components of
+configuration and dependency resolution that provide needed context for
+splicing.
+
+\subsection{Specs}
+\label{sec:spack-specs}
+\textit{Specs} are the core of Spack; they allow users to concisely specify
+build configuartions and constraints. Each spec has six attributes:
+\begin{enumerate*}
+  \item the package name;
+  \item the version to build;
+  \item variant values (\ie{} compile-time options);
+  \item the target operating system;
+  \item the target microarchitecture;
+  \item and the specs of the packages it depends on (and their attributes).
+\end{enumerate*}
+%
+\input{spec-syntax.tex}
+%
+Spack provides a concise syntax for specs, and \Cref{fig:spec-syntax}
+shows a subset of simple examples needed to understand this paper.
+A user typically provides an incomplete description,
+or \textit{abstract spec}, by not explicitly constraining all
+attributes. In contrast, a spec with all attributes set is called a
+\textit{concrete spec}. Concrete specs can be built and installed, as they
+contain all information the build environment might need to query in order
+to configure and build.
+The rest of the paper is concerned mainly with concrete specs.
+
+Specs are recursive in that dependencies (attribute (6) above) are specs
+themselves. They are therefore represented in memory as directed acyclic
+multigraphs. Nodes correspond to packages with their attributes, a directed
+edge $(A, B)$ denoting that package $A$ \textit{depends on} package $B$, and two
+edge sets corresponding to build, and link-run dependencies.  Taking the union
+of all edge sets and forming a single DAG admits a performant hashing scheme on
+specs, allowing for efficient reasoning about equality between specs.
+
+\subsection{Packages}
+\label{sec:spack-packages}
+A Spack \textit{package} defines the build process for a software
+product using available options. It defines a combinatorial space of build
+options that can include software versions, optional features,
+compile-time flags, dependencies on other packages, potential conflicts with
+other packages, and environmental constraints (\eg{} requiring an x86\_64
+system, requiring a CUDA installation, \etc{}).
+The software is described in a DSL embedded in Python that uses a Python
+class to represent every build configuration, a \textit{parameterized} build
+process, and the artifacts (\eg{} tarballs and patches) needed to build.
+%
+\input{example-package.tex}
+%
+\Cref{fig:example-pkg} shows a simple Spack package. Package
+configuration features, such as \directive{version}, \directive{depends\_on},
+and \directive{variant}, are specified with \textit{directives}. Directives
+serve to define the configuration space of a package and may introduce
+constraints on the package or its dependencies.\footnote{Some directives
+  simply attach metadata, such as the Github usernames of the maintainers,
+  licensing information, or websites associated with the package.}
+In contrast to most package managers, where a package description specifies
+a single software configuration, Spack packages are {\it conditional}, and most
+directives accept a {\tt when} argument. For example, the \directive{depends\_on}
+directive on line 13 constrains the {\tt zlib} dependency to version {\tt 1.2}
+{\it when} the example package is at version {\tt 1.0.0}. Similarly, the
+directive on line 15 says that
+{\tt example} version {\tt 1.1.0} requires a newer {\tt zlib} version: {\tt 1.3}.
+Constraints in package directives are specified using the spec syntax
+(\Cref{sec:spack-specs}). Directives below \texttt{\#\#\#}
+are part of our DSL extension (\cref{sec:impl-new-directive}).
+
+For our purposes, there are two major classes of dependencies in Spack: build
+and link-run. Build dependencies are packages that a node needs to
+execute its build process; these can be compilers (\eg{} \package{GCC}, or
+\package{clang}), (meta-)build systems(\eg{} \package{autotools},
+\package{CMake}, or \package{Ninja}), or even interpreters for build-time glue
+code (\eg{} \package{Python} or \package{Perl}). Link-run dependencies are the
+packages that a node needs either at compile-time for linking (\ie shared
+object files for dynamic linking and assembly code for static linking), or at
+runtime to use either as a subprocess or as a dynamically loaded library.
+%
+\subsection{The Concretizer}
+\label{sec:spack-concretizer}
+Spack's dependency resolver, or {\it concretizer}, takes abstract specs
+requested by a user and produces concrete specs that are valid according
+to constraints in package files. Since specs are recursive, this also
+includes resolving concrete specs for all of a package's
+dependencies. Consider the following abstract spec for the package from
+\cref{fig:example-pkg}, \spec{example@1.0.0}; one such concretization could be:
+
+\begin{footnotesize}
+\par\vspace{0.8em}\noindent\colorbox{whitesmoke}{\begin{minipage}{0.98\columnwidth}\input{code7.tex}\end{minipage}}\vspace{0.8em}
+\end{footnotesize}
+
+Dependency resolution when considering only compatible versions is known to be
+NP-complete~\cite{dicosmo2006edos, cox2016version}, and Spack must also decide
+compatible build options, operating systems, and micro-architectures.  Spack
+attempts to maximize its reuse of already-built components, either
+previously installed locally or present in some remote cache, which we
+collectively call \textit{reusable specs}. To ensure completeness and optimality
+(\ie{} always finding the optimal solution if one exists) while maintaining
+tractability, Spack implements its concretizer using the Answer Set Programming
+(ASP) system Clingo~\cite{gebser2016potassco, gamblin2022asp}. ASP is a logic
+programming paradigm, similar to Datalog, where problems are specified as
+first-order logic programs (\ie{} facts and deductive rules with variables)
+extended with a non-deterministic choice construct. ASP is distinguished from
+other logic programming paradigms by its lack of an operational semantics;
+instead, ASP programs are first \textit{grounded} into propositional logic
+programs without variables, and then solved for their \textit{stable models}
+using techniques from the SAT/SMT solving community such as the classic
+Davis–Putnam–Logemann–Loveland (DPLL) algorithm along with modern extensions
+like Conflict-Driven Clause Learning (CDCL)~\cite{davis1960computing,
+  davis1962machine, moskewicz2001chaff}. Since a given program may have many
+models in the presence of non-deterministic choices, Clingo allows
+optimization objectives to be defined over models of a program.
+
+Spack's concretizer is implemented in three stages. First, constraints from the
+package classes, reusable specs, and the user-provided abstract specs are
+compiled to an encoding of facts in ASP. Then, these facts are included in a
+logic program describing the formal constraints of spec concretization (\eg{}
+every spec must be resolved to exactly one version, every variant must have a
+chosen value, \etc{}) and optimization objectives (\eg{} maximize the reusable
+specs, use the newest satisfying version of every package, \etc{}), which is
+then run with Clingo to solve for stable models. Finally, the optimal model
+is processed by an interpreter to construct concrete specs for further use by
+Spack. Notably, this output includes which specs are reused (\ie{} those which have
+already been built), and which ones must be built from source.
+%
+Further details on the concretizer implementation, its optimization criteria,
+and the implementation of package reuse can be found in prior work~\cite{gamblin2022asp}.
+
+%
+\subsection{Binary Relocation}
+\label{sec:spack-relocation}
+Once Spack builds a package, it needs to ensure that each executable and library knows
+where to find its dependencies. On systems where there is only one version of each
+library, managed by the system package manager, the search path for
+libraries is usually stored either in global system configuration (\eg{} {\tt ldconfig} or {\tt
+  ld.so.conf}), or in an environment variable (\eg{} \texttt{LD\_LIBRARY\_PATH}). A
+naive install algorithm would simply append installation paths for Spack-built binaries
+to system search paths. This could lead to unintended crashes in both system
+libraries and Spack-built libraries, since each could attempt to access unexpected,
+incompatible libraries.
+%
+Taking inspiration from the Nix package
+manager~\cite{dolstra2004nix, dolstra2008nixos},
+Spack instead uses RPATHs~\cite{gamblin2015spack}.
+RPATHs allow for embedding the location of shared libraries directly into a
+binary without environment modification. All
+Spack packages are installed in a user-defined prefix and all dependencies are
+embedded as RPATHs.
+
+Unlike Nix, Spack supports {\it binary relocation}. Spack build caches can be installed
+in any location, including user home directories. The deployment locations of a binary
+package and its dependencies may {\it not} be the same at runtime as at build time. To
+ensure correct execution, Spack rewrites references to installation locations in
+installed files. It creates a mapping from binaries' original
+install locations to new locations, and it patches all occurrences of the old locations.
+%
+For simple cases, where the install location is shorter than the build location, Spack
+uses simple patching logic. For more complex installs, it can use the \texttt{patchelf}
+tool to lengthen paths~\cite{dolstra-patchelf}.
+%
+Spack can build binaries on a node's local filesystem,
+relocate them to a network file system, push them to a remote server for hosting
+reusable binaries, and install them again on a separate cluster.
+

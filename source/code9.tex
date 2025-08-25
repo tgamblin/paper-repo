@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\},fontsize=\footnotesize]
+\PY{n+nf}{imposed\PYZus{}constraint}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{Name}\PY{p}{)} \PY{p}{:\PYZhy{}} \PY{n+nf}{hash\PYZus{}attr}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{Name}\PY{p}{)}\PY{p}{.}
+\PY{n+nf}{imposed\PYZus{}constraint}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{Name}\PY{p}{,} \PY{n+nv}{Arg1}\PY{p}{)} \PY{p}{:\PYZhy{}}
+  \PY{n+nf}{hash\PYZus{}attr}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{Name}\PY{p}{,} \PY{n+nv}{Arg1}\PY{p}{)}\PY{p}{,}
+  \PY{n+nv}{Arg1} \PY{p}{!}\PY{o}{=} \PY{l+s+s2}{\PYZdq{}hash\PYZdq{}}\PY{p}{.}
+\PY{n+nf}{imposed\PYZus{}constraint}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{PackageName}\PY{p}{,} \PY{n+nv}{Arg1}\PY{p}{,} \PY{n+nv}{Arg2}\PY{p}{)} \PY{p}{:\PYZhy{}}
+  \PY{n+nf}{hash\PYZus{}attr}\PY{p}{(}\PY{n+nv}{Hash}\PY{p}{,} \PY{n+nv}{Attr}\PY{p}{,} \PY{n+nv}{PackageName}\PY{p}{,} \PY{n+nv}{Arg1}\PY{p}{,} \PY{n+nv}{Arg2}\PY{p}{)}\PY{p}{,}
+  \PY{n+nv}{Attr} \PY{p}{!}\PY{o}{=} \PY{l+s+s2}{\PYZdq{}depends\PYZus{}on\PYZdq{}}\PY{p}{.}
+\PY{n+nf}{imposed\PYZus{}constraint}\PY{p}{(}\PY{n+nv}{ParentHash}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}hash\PYZdq{}}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{,}\PY{n+nv}{ChildHash}\PY{p}{)} \PY{p}{:\PYZhy{}}
+  \PY{n+nf}{hash\PYZus{}attr}\PY{p}{(}\PY{n+nv}{ParentHash}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}hash\PYZdq{}}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{,}\PY{n+nv}{ChildHash}\PY{p}{)}\PY{p}{,}
+  \PY{n+nv}{ChildHash}\PY{p}{!}\PY{o}{=}\PY{n+nv}{ParentHash}\PY{p}{,}
+  \PY{o}{not} \PY{n+nf}{can\PYZus{}splice}\PY{p}{(}\PY{n+nf}{node}\PY{p}{(}\PY{n+nv}{Name}\PY{p}{)}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{,}\PY{n+nv}{ChildHash}\PY{p}{)}\PY{p}{.}
+\PY{n+nf}{imposed\PYZus{}constraint}\PY{p}{(}\PY{n+nv}{ParentHash}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}depends\PYZus{}on\PYZdq{}}\PY{p}{,}\PY{n+nv}{ParentName}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{)} \PY{p}{:\PYZhy{}}
+  \PY{n+nf}{hash\PYZus{}attr}\PY{p}{(}\PY{n+nv}{ParentHash}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}depends\PYZus{}on\PYZdq{}}\PY{p}{,}\PY{n+nv}{ParentName}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{)}\PY{p}{,}
+  \PY{o}{not} \PY{n+nf}{can\PYZus{}splice}\PY{p}{(}\PY{n+nf}{node}\PY{p}{(}\PY{n+nv}{Name}\PY{p}{)}\PY{p}{,}\PY{n+nv}{ChildName}\PY{p}{,}\PY{n+nv}{ChildHash}\PY{p}{)}\PY{p}{.}
+\end{Verbatim}

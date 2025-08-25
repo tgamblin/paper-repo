@@ -1,0 +1,26 @@
+\begin{Verbatim}[commandchars=\\\{\},numbers=left,xleftmargin=5mm,fontsize=\footnotesize]
+\PY{k}{class} \PY{n+nc}{Example}\PY{p}{(}\PY{n}{Package}\PY{p}{)}\PY{p}{:}
+\PY{+w}{    }\PY{l+s+sd}{\PYZdq{}\PYZdq{}\PYZdq{}Example depends on zlib, mpi and optionally bzip2\PYZdq{}\PYZdq{}\PYZdq{}}
+    \PY{c+c1}{\PYZsh{} This package provides two versions}
+    \PY{n}{version}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{1.1.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+    \PY{n}{version}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{1.0.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+
+    \PY{c+c1}{\PYZsh{} Optional bzip support}
+    \PY{n}{variant}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bzip}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{default}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+
+    \PY{c+c1}{\PYZsh{} Depends on bzip2 when bzip support is enabled}
+    \PY{n}{depends\PYZus{}on}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{bzip2}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{when}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{+bzip}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+    \PY{c+c1}{\PYZsh{} Version 1.0.0 depends on an older version of zlib}
+    \PY{n}{depends\PYZus{}on}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{zlib@1.2}\PY{l+s+s2}{\PYZdq{}} \PY{n}{when}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@1.0.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+    \PY{c+c1}{\PYZsh{} Version 1.1.0 depends on a newer version of zlib}
+    \PY{n}{depends\PYZus{}on}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{zlib@1.3}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{when}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@1.1.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+    \PY{c+c1}{\PYZsh{} Depends on some implementation of MPI}
+    \PY{n}{depends\PYZus{}on}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{mpi}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+
+    \PY{c+c1}{\PYZsh{}\PYZsh{}\PYZsh{} }
+    \PY{c+c1}{\PYZsh{} example@1.1.0 can be spliced in for example@1.0.0}
+    \PY{n}{can\PYZus{}splice}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{example@1.0.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{when}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@1.1.0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+    \PY{c+c1}{\PYZsh{} example@1.1.0+bzip can be spliced in for}
+    \PY{c+c1}{\PYZsh{} example\PYZhy{}ng@2.3.2+compat}
+    \PY{n}{can\PYZus{}splice}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{example\PYZhy{}ng@2.3.2+compat}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{when}\PY{o}{=}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{@1.1.0+bzip}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}

@@ -1,0 +1,119 @@
+\documentclass[sigconf]{acmart}
+\copyrightyear{2025}
+\acmYear{2025}
+\setcopyright{cc}
+\setcctype{by}
+\acmConference[SC '25]{The International Conference for High Performance Computing, Networking, Storage and Analysis}{November 16--21, 2025}{St Louis, MO, USA, LLNL-CONF-2010453}
+\acmBooktitle{The International Conference for High Performance Computing, Networking, Storage and Analysis (SC '25), November 16--21, 2025, St Louis, MO, USA}
+\acmDOI{10.1145/3712285.3759791}
+\acmISBN{979-8-4007-1466-5/2025/11}
+
+%% \acmSubmissionID{123-A56-BU3}
+
+\usepackage{pervasives}
+
+%% Bibliography style
+% \RequirePackage[
+%   datamodel=acmdatamodel,
+%   style=acmnumeric,
+%   sortcites=true,
+%   ]{biblatex}
+
+% \addbibresource{main.bib}       %
+
+% Some author typesetting automation
+\newcommand{\northeasternauthor}[2]{%
+  \author{#1}
+  \email{#2@northeastern.edu}
+  \affiliation{%
+    \institution{Northeastern University}
+    \city{Boston}
+    \state{Massachusetts}
+    \country{USA}}}
+\newcommand{\llnlauthor}[2]{%
+  \author{#1}
+  \email{#2@llnl.gov}
+  \affiliation{%
+    \institution{Lawrence Livermore National Laboratory}
+    \city{Livermore}
+    \state{California}
+    \country{USA}}}
+
+\input{encoding-perf-plot.tex}
+\input{splice-perf-plot.tex}
+\input{splice-scaling-fig.tex}
+\usepackage[skip=0pt]{caption}
+
+\begin{document}
+\title{Bridging the Gap Between Binary and Source Based Package Management in Spack\\}
+\northeasternauthor{John Gouwar}{gouwar.j}
+\llnlauthor{Gregory Becker}{becker33}
+\llnlauthor{Tamara Dahlgren}{dahlgren1}
+\llnlauthor{Nathan Hanford}{nhanford}
+\northeasternauthor{Arjun Guha}{a.guha}
+\llnlauthor{Todd Gamblin}{tgamblin}
+
+%% THIS IS SUBJECT TO CHANGE
+\renewcommand{\shortauthors}{Gouwar et. al}
+
+\begin{abstract}
+  Binary package managers install software quickly but they limit configurability
+  due to rigid ABI requirements that ensure compatibility between binaries.
+  Source package managers provide flexibility in building software, but compilation
+  can be slow. For example, installing an HPC code with a new MPI implementation
+  may result in a full rebuild. Spack, a widely deployed, HPC-focused package
+  manager, can use source and pre-compiled binaries, but lacks a binary
+  compatibility model, so it cannot mix binaries not built together.
+  We present {\it splicing}, an extension to Spack that models binary compatibility
+  between packages and allows seamless mixing of source and binary distributions.
+  Splicing augments Spack's packaging language and dependency resolution engine to
+  reuse compatible binaries but maintains the flexibility of source builds.
+  It incurs minimal installation-time overhead and allows rapid
+  installation from binaries, even for ABI-sensitive dependencies like MPI that
+  would otherwise require many rebuilds.
+\end{abstract}
+
+%% GENERATED FROM http://dl.acm.org/ccs.cfm
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10011007.10011006.10011071</concept_id>
+<concept_desc>Software and its engineering~Software configuration management and version control systems</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10010940.10011003.10010117</concept_id>
+<concept_desc>Software and its engineering~Interoperability</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+<concept>
+<concept_id>10011007.10011006.10011050.10011017</concept_id>
+<concept_desc>Software and its engineering~Domain specific languages</concept_desc>
+<concept_significance>100</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Software and its engineering~Software configuration management and version control systems}
+\ccsdesc[300]{Software and its engineering~Interoperability}
+\ccsdesc[100]{Software and its engineering~Domain specific languages}
+%%%
+\keywords{ABI-compatibility, Dependency management, Answer set programming,
+  Binary reuse}
+
+% \received{dd Month yyyy}
+% \received[revised]{dd Month yyyy}
+% \received[accepted]{dd Month yyyy}
+\maketitle
+\input{introduction.tex}
+\input{background.tex}
+\input{spack.tex}
+\input{splicing.tex}
+\input{implementation.tex}
+\input{evaluation.tex}
+\input{related.tex}
+\input{conclusion.tex}
+\input{acknowledgements.tex}
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{main.bib}
+\end{document}

@@ -1,0 +1,106 @@
+\usepackage[inline]{enumitem} % reference enumerated items with labels 
+\usepackage{cleveref}
+\usepackage{tabularx} %flexibly layed out tables
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{unminted}
+\usepackage{subcaption}
+\usepackage{xpatch}
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+
+
+% The rules around Latin abbreviations are tedious
+\newcommand{\eg}{\textit{e.g.},}
+\newcommand{\ie}{\textit{i.e.},}
+\newcommand{\etc}{\textit{etc.}}
+
+% Colored text background
+\definecolor{whitesmoke}{RGB}{245,245,245}
+
+% Colored line comments 
+\definecolor{JGcolor}{RGB}{140,3,252}
+\definecolor{AGcolor}{RGB}{255, 255, 0}
+\definecolor{TDcolor}{RGB}{255, 0, 0}
+\definecolor{GBcolor}{RGB}{0, 255, 0}
+\definecolor{TGcolor}{RGB}{0, 0, 255}
+\newcommand{\jg}[1]{\ifdraft{\color{JGcolor}[JG:#1]}\fi}
+\newcommand{\ag}[1]{\ifdraft{\color{AGcolor}[AG:#1]}\fi}
+\newcommand{\td}[1]{\ifdraft{\color{TDcolor}[TD:#1]}\fi}
+\newcommand{\gb}[1]{\ifdraft{\color{GBcolor}[GB:#1]}\fi}
+\newcommand{\tg}[1]{\ifdraft{\color{TGcolor}[TG:#1]}\fi}
+\newcommand{\tdt}[1]{\ifdraft{\color{TDcolor}[TD:]#1}\fi}
+
+% Describe the averaging criteria
+% means of means for aggregation
+% Small, medium, and large specs for evaluation
+% \newcommand{\smallspec}{\spec{caliper}}
+% \newcommand{\smallspecdeps}{X}
+% \newcommand{\mediumspec}{\spec{mfem}}
+% \newcommand{\medspecdeps}{Y}
+% \newcommand{\largespec}{\spec{glvis}}
+% \newcommand{\largespecdeps}{Z}
+% \newcommand{\nompispec}[0]{\spec{py-shroud}}
+
+% old Spack and new Spack for evalution
+\newcommand{\oldspack}{\emph{old Spack}}
+\newcommand{\splicespack}{\emph{splice Spack}}
+
+% Research questions for evaluation
+\newlist{questions}{enumerate}{2}
+\setlist[questions,1]{label=RQ\arabic*.,ref=RQ\arabic*}
+\setlist[questions,2]{label=(\alph*),ref=\thequestionsi(\alph*)}
+
+
+
+% Stylize the names of packages, specs, and directives uniformly
+\newcommand{\package}[1]{\textsc{#1}}
+\newcommand{\spec}[1]{\texttt{#1}}
+\newcommand{\directive}[1]{\texttt{#1}}
+\newcommand{\asp}[1]{\texttt{#1}}
+
+
+%%% Listings config
+\definecolor{keywordcolor}{HTML}{008700}
+\definecolor{classcolor}{HTML}{005f87}
+\definecolor{stringcolor}{HTML}{d70000}
+\definecolor{commentcolor}{RGB}{60,60,60}
+\lstdefinestyle{custompython}{
+  backgroundcolor=\color{white},
+  commentstyle=\color{commentcolor},
+  keywordstyle=\color{keywordcolor},
+  stringstyle=\color{stringcolor},
+  emph={Example},
+  emphstyle=\bfseries\color{classcolor},
+  basicstyle=\ttfamily\footnotesize,
+  language=Python
+}
+
+\lstdefinelanguage{Clingo}{
+  backgroundcolor=\color{white},
+  sensitive = true,
+  keywords = [1]{
+    node,
+    attr,
+    hash_attr,
+    abi_splice_conditions_hold,
+    installed_hash
+  },
+  keywordstyle=\bfseries\color{keywordcolor},
+  string = [b]{"},
+  stringstyle=\color{stringcolor},
+  emph={},
+  emphstyle=\bfseries\color{classcolor},
+  basicstyle=\ttfamily\footnotesize,
+}
+
+\newlength{\minwidthoval}
+\settowidth{\minwidthoval}{\ensuremath{QQS}}  % Set the width of the longest string
+
+%%% Experimental numbers
+\newcommand{\enclocalincrease}[0]{4.7}
+\newcommand{\encremoteincrease}[0]{7.1}
+\newcommand{\splicelocalincrease}[0]{17.1}
+\newcommand{\spliceremoteincrease}[0]{153}
+\newcommand{\scalingpercentincrease}[0]{74.2}

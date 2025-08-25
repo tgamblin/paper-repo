@@ -1,0 +1,17 @@
+\begin{figure}
+  \begin{subfigure}[t]{1.0\columnwidth}
+\input{code8.tex}
+\caption{The new encoding of reusable specs.}
+    \label{fig:new-encoding-hash-attrs}
+  \end{subfigure}
+  \begin{subfigure}[b]{1.0\columnwidth}
+\input{code9.tex}
+\caption{Rules that recover the \asp{imposed\_constraint} facts from the original
+encoding of reusable specs.}
+    \label{fig:new-encoding-imposed-constraints}
+  \end{subfigure}
+  \caption{The new encoding of reusable specs introduces indirection into the of \asp{imposed\_constraint}, this indirection is key for splicing to allow for
+  splicing to change the dependencies of reusable specs.}
+\label{fig:new-encoding}
+\Description{ASP code demonstrating the change in encoding to already installed specs.}
+\end{figure}

@@ -1,0 +1,49 @@
+\section{Related Work}
+\label{sec:related}
+
+Splicing generalizes approaches to avoid rebuilds in source-based package management by
+allowing binary substitution across ABI-compatible implementations. Related systems
+either avoid this problem through rigid policies or handle it with limited,
+use-case-specific tooling. Systems like {\tt rpm}, {\tt apt}, {\tt yum}, {\tt dnf}, and
+other binary package managers, regularly resolve dependencies without rebuilding their
+dependents. Typical Linux distributions upgrade packages in-place, and when a dependency
+binary is installed, its dependents are rebuilt. Traditional distributions {\it trust}
+the maintainers to ensure that ABI compatibility is maintained. Some, like Red Hat, use
+tooling like {\tt libabigail} to ensure that new packages adhere to the ABI of existing
+packages. Fundamentally, all of these solutions rely on the maintenance process to
+ensure ABI compatibility. Moreover, these systems do not reason deeply about ABI--they
+typically only manage version constraints, and do not reason about flags, build options,
+or microarchitectures as our conditional {\tt can\_splice} solution allows.
+
+So-called functional package managers like Nix~\cite{dolstra2004nix,dolstra2008nixos}
+and Guix~\cite{courtes-guix-2015} ensure that ABI compatibility is preserved using a
+convention similar to Spack. They identify packages based on their own configuration
+{\it and} that of all their dependencies, and they traditionally force full rebuilds if
+any dependencies change. Nix mitigates this issue by providing a public
+(non-relocatable) binary cache full of package substitutes. Again, maintainers ensure
+that rebuilds happen and packagers can easily install once all rebuilds happen.
+
+Guix has implemented a solution for the cascading rebuild problem most similar to our
+own; their variant is called {\it grafts}~\cite{guix-manual-grafts}. Their solution is
+intended for security updates and one-time ABI replacements.
+%
+Splicing lets package authors declare ABI compatibility using spec constraints, enabling
+the solver to select compatible replacements based on context. Unlike grafts, these
+declarations live with the replacing package, not the replaced one.
+Guix allows developers to specify replacements for their own package that avoid cascading
+rebuilds~\cite{courtes2016timely, courtes2020grafts}. This
+solution differs from ours in that the {\it replaced} package specifies what can replace
+it. This effectively means that the replaced package must {\it know} about possible
+replacements, and that only one replacement can be specified at any given time. This
+makes sense for Guix's use case of security updates. If a CVE is discovered, a grafted
+package is replaced with a ``fixed'' version. However, this implementation is unsuitable
+for implementations like MPI, where there may be {\it many} possible ABI-compatible
+replacements that may be different depending on the host platform and the choices of the
+developer maintaining the software stack. We could not express in Guix, for example,
+that \package{Cray MPICH}, \package{mvapich}, and \package{intel-mpi} are all suitable
+replacements for \package{mpich}. Further, Guix has no solver, so there is no reasoning
+on the part of the package manager about ABI constraints -- the maintainers must ensure
+that any specified replacement is ABI-compatible with the replaced package.
+Splicing instead allows for
+an ecosystem in which new replacements can be easily added, users can choose which
+replacement they use, and the solver ultimately ensures the safety of user choices.
