@@ -31,7 +31,7 @@ Splicing lets package authors declare ABI compatibility using spec constraints, 
 the solver to select compatible replacements based on context. Unlike grafts, these
 declarations live with the replacing package, not the replaced one.
 Guix allows developers to specify replacements for their own package that avoid cascading
-rebuilds~\cite{courtes2016timely, courtes2020grafts}. This
+rebuilds~\cite{courtes2016timely,courtes2020grafts}. This
 solution differs from ours in that the {\it replaced} package specifies what can replace
 it. This effectively means that the replaced package must {\it know} about possible
 replacements, and that only one replacement can be specified at any given time. This

@@ -96,14 +96,14 @@ dependencies. Consider the following abstract spec for the package from
 \end{footnotesize}
 
 Dependency resolution when considering only compatible versions is known to be
-NP-complete~\cite{dicosmo2006edos, cox2016version}, and Spack must also decide
+NP-complete~\cite{dicosmo2006edos,cox2016version}, and Spack must also decide
 compatible build options, operating systems, and micro-architectures.  Spack
 attempts to maximize its reuse of already-built components, either
 previously installed locally or present in some remote cache, which we
 collectively call \textit{reusable specs}. To ensure completeness and optimality
 (\ie{} always finding the optimal solution if one exists) while maintaining
 tractability, Spack implements its concretizer using the Answer Set Programming
-(ASP) system Clingo~\cite{gebser2016potassco, gamblin2022asp}. ASP is a logic
+(ASP) system Clingo~\cite{gebser2016potassco,gamblin2022asp}. ASP is a logic
 programming paradigm, similar to Datalog, where problems are specified as
 first-order logic programs (\ie{} facts and deductive rules with variables)
 extended with a non-deterministic choice construct. ASP is distinguished from
@@ -112,8 +112,7 @@ instead, ASP programs are first \textit{grounded} into propositional logic
 programs without variables, and then solved for their \textit{stable models}
 using techniques from the SAT/SMT solving community such as the classic
 Davis–Putnam–Logemann–Loveland (DPLL) algorithm along with modern extensions
-like Conflict-Driven Clause Learning (CDCL)~\cite{davis1960computing,
-  davis1962machine, moskewicz2001chaff}. Since a given program may have many
+like Conflict-Driven Clause Learning (CDCL)~\cite{davis1960computing,davis1962machine,moskewicz2001chaff}. Since a given program may have many
 models in the presence of non-deterministic choices, Clingo allows
 optimization objectives to be defined over models of a program.
 
@@ -146,7 +145,7 @@ libraries and Spack-built libraries, since each could attempt to access unexpect
 incompatible libraries.
 %
 Taking inspiration from the Nix package
-manager~\cite{dolstra2004nix, dolstra2008nixos},
+manager~\cite{dolstra2004nix,dolstra2008nixos},
 Spack instead uses RPATHs~\cite{gamblin2015spack}.
 RPATHs allow for embedding the location of shared libraries directly into a
 binary without environment modification. All
@@ -167,4 +166,3 @@ tool to lengthen paths~\cite{dolstra-patchelf}.
 Spack can build binaries on a node's local filesystem,
 relocate them to a network file system, push them to a remote server for hosting
 reusable binaries, and install them again on a separate cluster.
-
